@@ -1,5 +1,13 @@
-const ICloudHelper = require('./src/icloud/icloud-agent');
+const schedule = require('node-schedule');
+const icloudHelper = require('./src/icloud/icloud-agent');
+global._taskOnRun = false;
 
-const icloud = new ICloudHelper();
-
-icloud.openICloudPage();
+schedule.scheduleJob('*/1 * * * *', async function () {
+  if (!global._taskOnRun) {
+    console.info('Task start');
+    const cloud = new icloudHelper();
+    await cloud.cloudTask();
+  } else {
+    console.info('Task busy');
+  }
+});

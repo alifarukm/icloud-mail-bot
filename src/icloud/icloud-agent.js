@@ -1,10 +1,58 @@
 const puppeteer = require('puppeteer');
 const cookies = require('./icloud-cookie');
-
+const {
+  createActiveMail,
+  getActiveMailNotBlocked,
+} = require('../mongoose/service/active-mails');
+require('../mongoose/db');
+const MAX_MAIL_NUMBER = 5;
 class ICloudAgent {
-  async openICloudPage() {
+  async cloudTask() {
+    console.log(global._taskOnRun);
+    if (global._taskOnRun) {
+      console.log('New Task not running due to another not finish.');
+      return;
+    }
+
+    try {
+      global._taskOnRun = true;
+      const total = await getActiveMailNotBlocked();
+      console.info('Cloud agent run successfully.');
+
+      if (total.length <= MAX_MAIL_NUMBER) {
+        const loopIteration = MAX_MAIL_NUMBER - Number(total.length);
+
+        let loopArr = [];
+
+        for (let i = 0; i < loopIteration; i++) {
+          loopArr.push(i);
+        }
+
+        for (var item of loopArr) {
+          await this._openICloudPage();
+
+          if (item === loopArr.length - 1) {
+            global._taskOnRun = false;
+          }
+        }
+      } else {
+        console.log('Enough mail.');
+        global._taskOnRun = false;
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  /**
+   * This section is main for create new email. Starting in icloud settings page then
+   * select options under the hide my emials section. Click this button and create
+   * temporary mail.
+   * @returns
+   */
+  async _openICloudPage() {
     const browser = await puppeteer.launch({
-      headless: false,
+      headless: true,
       // userDataDir: datadir,
       devtools: true,
     });
@@ -13,7 +61,7 @@ class ICloudAgent {
 
     const res = await page.goto('https://www.icloud.com/settings/');
 
-    this.sleep(10000);
+    this._sleep(10000);
 
     await page.waitForSelector('iframe#settings');
 
@@ -43,9 +91,11 @@ class ICloudAgent {
 
     await mailFrame.waitForSelector('.GeneratedEmail');
 
-    await mailFrame.type('.AddEmail-inputsRow > div > input', 'deneme3');
+    const number = Math.floor(Math.random() * (1000 + 1));
 
-    this.sleep(3000);
+    await mailFrame.type('.AddEmail-inputsRow > div > input', `fb${number}`);
+
+    this._sleep(3000);
 
     await mailFrame.waitForSelector('.GeneratedEmail');
 
@@ -55,7 +105,7 @@ class ICloudAgent {
 
     await complateBtn.click();
 
-    this.sleep(10000);
+    this._sleep(10000);
 
     const mail = await mailFrame.evaluate(() => {
       let value = document.querySelector(
@@ -65,12 +115,18 @@ class ICloudAgent {
       return value;
     });
 
-    // todo send mail to mongoose
+    await createActiveMail(mail);
 
+    if (mail) {
+      await browser.close();
+    }
     return res;
   }
 
-  sleep(milliseconds) {
+  // TODO Clear used mails
+  async _clearUsedMais() {}
+
+  _sleep(milliseconds) {
     const date = Date.now();
     let currentDate = null;
     do {
