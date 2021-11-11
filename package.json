@@ -1,0 +1,22 @@
+{
+  "name": "icloud-mail-bot",
+  "version": "1.0.0",
+  "description": "Icloud mail bot for creating and limiting and get available mails from mailbox.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alifarukm/icloud-mail-bot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alifarukm/icloud-mail-bot/issues"
+  },
+  "homepage": "https://github.com/alifarukm/icloud-mail-bot#readme",
+  "dependencies": {
+    "puppeteer": "^11.0.0"
+  }
+}
